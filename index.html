@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EduML — Academic Performance Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#07071a;color:#f0f4ff;min-height:100vh;overflow-x:hidden}
+:root{--p:#7c3aed;--c:#06b6d4;--pk:#f43f5e;--g:#10b981;--am:#f59e0b;--t2:#94a3b8;--mu:#4b5563;--bd:rgba(255,255,255,.08);--sf:rgba(255,255,255,.04);--sfh:rgba(255,255,255,.08)}
+
+/* ── Blobs ── */
+#blobs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:.12}
+.b1{width:550px;height:550px;background:#7c3aed;top:-160px;left:-160px;animation:bf 11s ease-in-out infinite}
+.b2{width:400px;height:400px;background:#06b6d4;bottom:0;right:-100px;animation:bf 14s ease-in-out infinite reverse 2s}
+.b3{width:320px;height:320px;background:#f43f5e;bottom:20%;left:38%;animation:bf 9s ease-in-out infinite 4s}
+.b4{width:220px;height:220px;background:#f59e0b;top:35%;left:18%;animation:bf 16s ease-in-out infinite 6s}
+@keyframes bf{0%,100%{transform:translate(0,0)}40%{transform:translate(35px,-25px)}70%{transform:translate(-20px,18px)}}
+
+/* ── Layout ── */
+.app{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* ── Sidebar ── */
+.sb{width:220px;min-height:100vh;background:rgba(7,7,26,.88);border-right:1px solid var(--bd);padding:1.25rem .85rem;display:flex;flex-direction:column;gap:2px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 8px;margin-bottom:1.4rem}
+.lico{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#06b6d4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ltxt{font-size:15px;font-weight:800;background:linear-gradient(90deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lsub{font-size:10px;color:var(--mu);-webkit-text-fill-color:var(--mu)}
+.ns{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mu);padding:10px 10px 4px;margin-top:6px}
+.ni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--t2);font-size:13px;font-weight:500;transition:all .2s;border:1px solid transparent;position:relative;user-select:none}
+.ni:hover{background:var(--sfh);color:#f0f4ff}
+.ni.on{background:rgba(124,58,237,.15);color:#7c3aed;border-color:rgba(124,58,237,.25)}
+.ni.on::before{content:'';position:absolute;left:-14px;top:50%;transform:translateY(-50%);width:3px;height:18px;background:#7c3aed;border-radius:0 3px 3px 0}
+.nic{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.nbdg{margin-left:auto;background:#f43f5e;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:700}
+.sbfoot{margin-top:auto;padding-top:1rem;border-top:1px solid var(--bd)}
+.upill{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;transition:background .2s}
+.upill:hover{background:var(--sfh)}
+.uava{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#f43f5e);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.uname{font-size:13px;font-weight:600}.urole{font-size:11px;color:var(--t2)}
+.uonline{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#10b981;margin-top:1px}
+.uonline::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;animation:pl 1.6s ease infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Main ── */
+.mn{flex:1;padding:1.5rem;overflow-y:auto;min-width:0}
+.pg{display:none;animation:fu .3s ease}.pg.on{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Page header ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
+.ph h1{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.ph p{font-size:13px;color:var(--t2);margin-top:3px}
+.phr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--bd);cursor:pointer;transition:all .2s;background:var(--sf);color:var(--t2)}
+.chip:hover,.chip.on{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.35);color:#7c3aed}
+.btnp{padding:9px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+.btnp:hover{background:#6d28d9;transform:translateY(-1px)}
+.btno{background:rgba(255,255,255,.07);color:#f0f4ff}
+.btno:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+
+/* ── Glass card ── */
+.gc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);transition:all .25s}
+.gc:hover{background:rgba(255,255,255,.065);border-color:rgba(255,255,255,.13);transform:translateY(-2px)}
+.gcf{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+
+/* ── Dashboard metrics ── */
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.25rem}
+.mc{padding:1.25rem;overflow:hidden;position:relative;cursor:default}
+.mcglow{position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;opacity:.1}
+.mcicon{font-size:24px;margin-bottom:10px}
+.mcnum{font-size:30px;font-weight:900;letter-spacing:-1px}
+.mclbl{font-size:12px;color:var(--t2);margin-top:4px}
+.mcch{font-size:11px;margin-top:10px;display:flex;align-items:center;gap:4px}
+.cup{color:#10b981}.cdn{color:#f43f5e}
+
+/* ── Charts row ── */
+.cr{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:1.25rem}
+.brow{display:grid;grid-template-columns:2fr 1.5fr 1.5fr;gap:14px}
+.cp{padding:1.25rem}
+.ctitle{font-size:14px;font-weight:700;margin-bottom:3px}
+.csub{font-size:12px;color:var(--t2);margin-bottom:1rem}
+.ch{position:relative}
+
+/* ── Grade pills ── */
+.gp{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.gA{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.28)}
+.gB{background:rgba(6,182,212,.15);color:#22d3ee;border:1px solid rgba(6,182,212,.28)}
+.gC{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.28)}
+.gD{background:rgba(244,63,94,.15);color:#fb7185;border:1px solid rgba(244,63,94,.28)}
+
+/* ── Leaderboard / Activity ── */
+.lbi{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.lbi:last-child{border-bottom:none}
+.lbava{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.aitem{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+.aitem:last-child{border-bottom:none}
+.adot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+
+/* ── Tags ── */
+.tl{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500}
+.tl-l{background:rgba(16,185,129,.15);color:#34d399}
+.tl-m{background:rgba(245,158,11,.15);color:#fbbf24}
+.tl-h{background:rgba(244,63,94,.15);color:#fb7185}
+
+/* ── Students ── */
+.sbar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:1rem;transition:border-color .2s}
+.sbar:focus-within{border-color:#7c3aed}
+.sbar input{flex:1;background:none;border:none;color:#f0f4ff;font-size:14px;font-family:inherit;outline:none}
+.sbar input::placeholder{color:var(--mu)}
+.frow{display:flex;gap:8px;margin-bottom:1rem;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.frow::-webkit-scrollbar{display:none}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.scard{padding:1.25rem;cursor:pointer}
+.scava{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800}
+.scname{font-size:15px;font-weight:700;margin-top:10px;margin-bottom:2px}
+.scdept{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.scstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px}
+.scstat{background:rgba(255,255,255,.04);border-radius:8px;padding:7px;text-align:center}
+.scstatn{font-size:14px;font-weight:700}.scstatl{font-size:10px;color:var(--mu);margin-top:1px}
+.pbar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:10px;overflow:hidden}
+.pbarfill{height:100%;border-radius:2px;transition:width 1.5s ease}
+
+/* ── Analytics ── */
+.ag{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+.mmg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.25rem}
+.mmcard{padding:1rem;text-align:center;cursor:default}
+.mmnum{font-size:26px;font-weight:900;letter-spacing:-1px;margin-bottom:4px}
+.mmlbl{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.6px}
+
+/* ── Predict ── */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{margin-bottom:12px}
+.fg label{font-size:12px;color:var(--t2);display:block;margin-bottom:6px;font-weight:500}
+.fg input,.fg select{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--bd);border-radius:10px;padding:9px 12px;color:#f0f4ff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.fg input:focus,.fg select:focus{border-color:#7c3aed}
+.fg select option{background:#0d0d22;color:#f0f4ff}
+.pout{border-radius:16px;padding:1.5rem;transition:all .4s;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.22);display:flex;align-items:center;justify-content:center;min-height:240px;text-align:center}
+.biggrade{font-size:90px;font-weight:900;line-height:.9;letter-spacing:-5px}
+.pipstep{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.pipstep:last-child{border-bottom:none}
+.pipico{width:26px;height:26px;background:rgba(124,58,237,.15);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+
+/* ── Drawer ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;right:-460px;top:0;width:440px;max-width:100vw;height:100vh;background:rgba(9,9,24,.97);border-left:1px solid var(--bd);z-index:201;transition:right .36s cubic-bezier(.4,0,.2,1);padding:1.5rem;overflow-y:auto;-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+.drawer.open{right:0}
+.drhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.xbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--t2);transition:all .2s;font-family:inherit;color:var(--t2);line-height:1}
+.xbtn:hover{color:#f0f4ff;background:var(--sfh)}
+.drstatg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:1rem 0}
+.drstat{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px}
+
+/* ── Toast ── */
+.tcont{position:fixed;top:20px;right:20px;z-index:400;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.tst{background:rgba(13,13,34,.98);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;min-width:260px;pointer-events:all;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);animation:tin .3s ease}
+.tst.out{animation:tout .3s ease forwards}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tout{to{transform:translateX(120%);opacity:0}}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:24px;z-index:100;width:54px;height:54px;background:linear-gradient(135deg,#7c3aed,#9333ea);border:none;border-radius:50%;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:transform .2s;animation:fabp 2.5s ease infinite;color:#fff;font-family:inherit}
+.fab:hover{transform:scale(1.1)!important}
+@keyframes fabp{0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,.5)}60%{box-shadow:0 0 0 12px rgba(124,58,237,0)}}
+
+/* ── Gradient text ── */
+.grad{background:linear-gradient(90deg,#7c3aed,#06b6d4,#f43f5e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gshift 4s ease infinite}
+@keyframes gshift{0%{background-position:0%}50%{background-position:100%}100%{background-position:0%}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+
+/* ── Responsive ── */
+@media(max-width:720px){
+  .sb{width:60px}.ltxt,.lsub,.ni>span:last-child:not(.nic),.ns,.uname,.urole,.uonline,.nbdg{display:none}
+  .mg{grid-template-columns:1fr 1fr}.cr,.brow,.ag,.pgrid{grid-template-columns:1fr}.sg{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div id="blobs"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+
+<!-- Toasts -->
+<div class="tcont" id="tcont"></div>
+
+<!-- Overlay + Drawer -->
+<div class="overlay" id="ov" onclick="closeDr()"></div>
+<div class="drawer" id="drawer">
+  <div class="drhd">
+    <h2 style="font-size:18px;font-weight:700">Student profile</h2>
+    <button class="xbtn" onclick="closeDr()">&#x2715;</button>
+  </div>
+  <div id="drbody"></div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="toast('Quick predict launched! 🚀','#7c3aed')" title="Quick predict">+</button>
+
+<!-- App -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sb">
+    <div class="logo">
+      <div class="lico">🎓</div>
+      <div><div class="ltxt">EduML</div><div class="lsub">Academic AI</div></div>
+    </div>
+    <div class="ns">Main</div>
+    <div class="ni on" onclick="go(this,'p0')"><span class="nic">📊</span><span>Dashboard</span></div>
+    <div class="ni" onclick="go(this,'p1')"><span class="nic">👥</span><span>Students</span><span class="nbdg">9</span></div>
+    <div class="ni" onclick="go(this,'p2');lazyA()"><span class="nic">📈</span><span>Analytics</span></div>
+    <div class="ni" onclick="go(this,'p3')"><span class="nic">🔮</span><span>Predict</span></div>
+    <div class="ns">More</div>
+    <div class="ni" onclick="toast('Reports module coming soon','#06b6d4')"><span class="nic">📋</span><span>Reports</span></div>
+    <div class="ni" onclick="toast('Settings panel opening...','#f59e0b')"><span class="nic">⚙️</span><span>Settings</span></div>
+    <div class="sbfoot">
+      <div class="upill">
+        <div class="uava">PR</div>
+        <div><div class="uname">Prof. Rao</div><div class="uonline">Online</div></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="mn">
+
+    <!-- PAGE 0: DASHBOARD -->
+    <div class="pg on" id="p0">
+      <div class="ph">
+        <div><h1>Overview <span class="grad">Dashboard</span></h1><p>June 2026 &bull; Batch 2023–27</p></div>
+        <div class="phr">
+          <div class="chip on">Month</div>
+          <div class="chip" onclick="toast('Semester view loaded','#06b6d4')">Semester</div>
+          <div class="chip" onclick="toast('Year view loaded','#f59e0b')">Year</div>
+          <button class="btnp" onclick="toast('Report exported! ✅','#10b981')">↓ Export</button>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="mg">
+        <div class="gc mc">
+          <div class="mcglow" style="background:#7c3aed"></div>
+          <div class="mcicon">👨‍🎓</div>
+          <div class="mcnum grad" id="m0">0</div>
+          <div class="mclbl">Total Students</div>
+          <div class="mcch cup">↑ 12% vs last batch</div>
+        </div>
+        <div class="gc mc">
+          <div class="mcglow" style="background:#10b981"></div>
+          <div class="mcicon">📊</div>
+          <div class="mcnum" style="color:#10b981" id="m1">0%</div>
+          <div class="mclbl">Avg Performance</div>
+          <div class="mcch cup">↑ 3.4% this month</div>
+        </div>
+        <div class="gc mc">
+          <div class="mcglow" style="background:#f43f5e"></div>
+          <div class="mcicon">⚠️</div>
+          <div class="mcnum" style="color:#f43f5e" id="m2">0</div>
+          <div class="mclbl">At-Risk Students</div>
+          <div class="mcch cdn">↑ 1 from last week</div>
+        </div>
+        <div class="gc mc">
+          <div class="mcglow" style="background:#f59e0b"></div>
+          <div class="mcicon">🎯</div>
+          <div class="mcnum" style="color:#f59e0b" id="m3">0%</div>
+          <div class="mclbl">Model Accuracy</div>
+          <div class="mcch cup">↑ 0.8% with tuning</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="cr">
+        <div class="gc cp">
+          <div class="ctitle">Performance Trend</div>
+          <div class="csub">Monthly average score — all students</div>
+          <div class="ch" style="height:200px"><canvas id="trendC"></canvas></div>
+        </div>
+        <div class="gc cp">
+          <div class="ctitle">Grade Distribution</div>
+          <div class="csub">Current prediction outcomes</div>
+          <div class="ch" style="height:155px;margin-bottom:10px"><canvas id="donutC"></canvas></div>
+          <div id="glegend"></div>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div class="brow">
+        <div class="gc cp">
+          <div class="ctitle" style="margin-bottom:1rem">🏆 Leaderboard</div>
+          <div id="lb"></div>
+        </div>
+        <div class="gc cp">
+          <div class="ctitle" style="margin-bottom:1rem">⚡ Activity</div>
+          <div id="actfeed"></div>
+        </div>
+        <div class="gc cp">
+          <div class="ctitle" style="margin-bottom:1rem">📌 Quick Stats</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="qstats"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 1: STUDENTS -->
+    <div class="pg" id="p1">
+      <div class="ph">
+        <div><h1>Students</h1><p>9 enrolled &bull; Batch 2023–27</p></div>
+        <div class="phr"><button class="btnp" onclick="toast('Student added! ✅','#10b981')">+ Add student</button></div>
+      </div>
+      <div class="sbar">
+        <span style="font-size:16px;color:var(--mu)">🔍</span>
+        <input id="sq" type="text" placeholder="Search by name or department..." oninput="filterS()">
+        <span style="font-size:12px;color:var(--t2)" id="scount">9 students</span>
+      </div>
+      <div class="frow" id="frow"></div>
+      <div class="sg" id="sgrid"></div>
+    </div>
+
+    <!-- PAGE 2: ANALYTICS -->
+    <div class="pg" id="p2">
+      <div class="ph">
+        <div><h1>Analytics</h1><p>Model performance &amp; feature insights</p></div>
+        <div class="phr">
+          <div class="chip on">Random Forest</div>
+          <div class="chip" onclick="toast('Switching to Gradient Boost...','#06b6d4')">Gradient Boost</div>
+          <div class="chip" onclick="toast('SVM selected','#f59e0b')">SVM</div>
+        </div>
+      </div>
+      <div class="mmg">
+        <div class="gc mmcard"><div class="mmnum grad">88.5%</div><div class="mmlbl">Accuracy</div></div>
+        <div class="gc mmcard"><div class="mmnum" style="color:#06b6d4">86.4%</div><div class="mmlbl">F1 Score</div></div>
+        <div class="gc mmcard"><div class="mmnum" style="color:#f43f5e">0.923</div><div class="mmlbl">ROC-AUC</div></div>
+        <div class="gc mmcard"><div class="mmnum" style="color:#10b981">±0.57</div><div class="mmlbl">CV Std Dev</div></div>
+      </div>
+      <div class="ag">
+        <div class="gc cp"><div class="ctitle">Feature Importance</div><div class="csub">Random Forest — top predictors ranked</div><div class="ch" style="height:240px"><canvas id="fiC"></canvas></div></div>
+        <div class="gc cp"><div class="ctitle">5-Fold CV Accuracy</div><div class="csub">Train vs validation across folds</div><div class="ch" style="height:240px"><canvas id="cvC"></canvas></div></div>
+        <div class="gc cp"><div class="ctitle">Score Histogram</div><div class="csub">Weighted score distribution</div><div class="ch" style="height:220px"><canvas id="histC"></canvas></div></div>
+        <div class="gc cp"><div class="ctitle">Attendance vs Performance</div><div class="csub">Scatter — each dot is one student</div><div class="ch" style="height:220px"><canvas id="scatC"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: PREDICT -->
+    <div class="pg" id="p3">
+      <div class="ph">
+        <div><h1>Predict <span class="grad">Grade</span></h1><p>Run the ML model on any student</p></div>
+      </div>
+      <div class="pgrid">
+        <div>
+          <div class="gcf" style="padding:1.25rem;margin-bottom:14px">
+            <div class="ctitle" style="margin-bottom:1rem">📝 Student Input</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="fg"><label>Name</label><input id="pn" type="text" value="New Student"></div>
+              <div class="fg"><label>Department</label><select id="pdept"><option>CS</option><option>ECE</option><option>ME</option><option>Civil</option><option>MBA</option></select></div>
+              <div class="fg"><label>Attendance (%)</label><input id="pa" type="number" value="78" min="0" max="100" oninput="liveEF()"></div>
+              <div class="fg"><label>Midterm score</label><input id="pm" type="number" value="70" min="0" max="100" oninput="liveEF()"></div>
+              <div class="fg"><label>Assignments avg</label><input id="pasn" type="number" value="75" min="0" max="100" oninput="liveEF()"></div>
+              <div class="fg"><label>Study hrs/week</label><input id="psh" type="number" value="14" min="0" max="40" oninput="liveEF()"></div>
+              <div class="fg"><label>Previous GPA (0–10)</label><input id="pgpa" type="number" value="7.5" min="0" max="10" step="0.1" oninput="liveEF()"></div>
+              <div class="fg"><label>Project score</label><input id="pprj" type="number" value="72" min="0" max="100" oninput="liveEF()"></div>
+            </div>
+            <button class="btnp" style="width:100%;justify-content:center;margin-top:6px" onclick="runPredict()">🔮 Run Prediction</button>
+          </div>
+          <div class="gcf" style="padding:1.25rem">
+            <div class="ctitle" style="margin-bottom:10px">⚡ Engineered Features</div>
+            <div id="efchips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+        </div>
+        <div>
+          <div class="pout" id="pout">
+            <div><div style="font-size:40px;margin-bottom:10px">🔮</div><p style="color:var(--t2)">Fill in details and click predict</p></div>
+          </div>
+          <div class="gcf" style="padding:1.25rem;margin-top:14px">
+            <div class="ctitle" style="margin-bottom:10px">🔄 ML Pipeline Steps</div>
+            <div id="pipsteps"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Chart.js — loaded at bottom for reliability -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+/* ════════════════════════════════════
+   DATA
+════════════════════════════════════ */
+const S=[
+  {id:1,n:'Dev Patel',d:'CS',i:'DP',c:'#10b981',att:95,mid:94,asn:96,gpa:9.7,prj:95,g:'A',r:'Low',s:95},
+  {id:2,n:'Vikram Joshi',d:'ECE',i:'VJ',c:'#06b6d4',att:88,mid:85,asn:87,gpa:8.9,prj:88,g:'A',r:'Low',s:87},
+  {id:3,n:'Priya Sharma',d:'CS',i:'PS',c:'#7c3aed',att:92,mid:88,asn:91,gpa:9.1,prj:92,g:'A',r:'Low',s:91},
+  {id:4,n:'Arjun Mehta',d:'MBA',i:'AM',c:'#8b5cf6',att:83,mid:79,asn:82,gpa:8.3,prj:80,g:'B',r:'Low',s:82},
+  {id:5,n:'Rohan Kumar',d:'ECE',i:'RK',c:'#f59e0b',att:78,mid:72,asn:75,gpa:7.8,prj:74,g:'B',r:'Low',s:75},
+  {id:6,n:'Sneha Reddy',d:'CS',i:'SR',c:'#ec4899',att:71,mid:65,asn:68,gpa:7.0,prj:66,g:'C',r:'Moderate',s:68},
+  {id:7,n:'Ananya Singh',d:'ME',i:'AS',c:'#f97316',att:65,mid:58,asn:62,gpa:6.2,prj:60,g:'C',r:'Moderate',s:62},
+  {id:8,n:'Meera Iyer',d:'ME',i:'MI',c:'#ef4444',att:55,mid:50,asn:52,gpa:5.8,prj:50,g:'D',r:'High',s:52},
+  {id:9,n:'Kavya Nair',d:'Civil',i:'KN',c:'#dc2626',att:45,mid:42,asn:48,gpa:5.1,prj:44,g:'D',r:'High',s:45},
+];
+
+const DK='#64748b', GC='rgba(255,255,255,.07)';
+
+/* ════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════ */
+function go(el, pgId){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById(pgId).classList.add('on');
+}
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+function toast(msg, col='#7c3aed'){
+  const c=document.getElementById('tcont');
+  const t=document.createElement('div');
+  t.className='tst';
+  t.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(), 320); }, 3200);
+}
+
+/* ════════════════════════════════════
+   COUNTER ANIMATION
+════════════════════════════════════ */
+function countUp(id, target, suffix='', dur=1300, decimals=0){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const start=performance.now();
+  function step(now){
+    const p=Math.min((now-start)/dur, 1);
+    const ease=1-Math.pow(1-p, 3);
+    el.textContent=( (target*ease).toFixed(decimals) ) + suffix;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════ */
+function initDash(){
+  countUp('m0', 9, '', 900, 0);
+  countUp('m1', 74.8, '%', 1200, 1);
+  countUp('m2', 2, '', 800, 0);
+  countUp('m3', 88.5, '%', 1400, 1);
+  buildTrendChart();
+  buildDonut();
+  buildLeaderboard();
+  buildActivity();
+  buildQuickStats();
+}
+
+function buildTrendChart(){
+  const el=document.getElementById('trendC');
+  if(!el||!window.Chart) return;
+  new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun'],
+      datasets:[
+        {label:'Avg Score',data:[71,73,75,72,78,82],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.12)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#7c3aed',pointBorderColor:'transparent'},
+        {label:'Top Score',data:[86,88,90,87,92,95],borderColor:'#10b981',backgroundColor:'transparent',tension:.4,pointRadius:3,borderDash:[5,3]}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:GC},ticks:{color:DK,font:{size:11}}},
+        y:{grid:{color:GC},ticks:{color:DK,font:{size:11}}}
+      }}
+  });
+}
+
+function buildDonut(){
+  const el=document.getElementById('donutC');
+  if(!el||!window.Chart) return;
+  new Chart(el.getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:['A','B','C','D'],
+      datasets:[{data:[3,2,2,2],backgroundColor:['#10b981','#06b6d4','#f59e0b','#f43f5e'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false}},layout:{padding:4}}
+  });
+  const lg=document.getElementById('glegend');
+  [['A','3','#10b981'],['B','2','#06b6d4'],['C','2','#f59e0b'],['D','2','#f43f5e']].forEach(([g,n,c])=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)';
+    d.innerHTML=`<span style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>Grade ${g}</span><span style="color:var(--t2)">${n} students</span>`;
+    lg.appendChild(d);
+  });
+}
+
+function buildLeaderboard(){
+  const top=[...S].sort((a,b)=>b.s-a.s).slice(0,5);
+  const md=['🥇','🥈','🥉'];
+  document.getElementById('lb').innerHTML=top.map((s,i)=>`
+    <div class="lbi">
+      <div style="width:22px;text-align:center;font-size:13px">${md[i]||i+1}</div>
+      <div class="lbava" style="background:${s.c}22;color:${s.c}">${s.i}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${s.n}</div><div style="font-size:11px;color:var(--t2)">${s.d}</div></div>
+      <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:${s.c}">${s.s}</div><span class="gp g${s.g}">${s.g}</span></div>
+    </div>`).join('');
+}
+
+function buildActivity(){
+  const acts=[
+    {c:'#10b981',t:'<b>Dev Patel</b> achieved Grade A prediction'},
+    {c:'#f43f5e',t:'<b>Kavya Nair</b> flagged as high risk ⚠️'},
+    {c:'#7c3aed',t:'Model retrained — <b>88.5% accuracy</b>'},
+    {c:'#06b6d4',t:'<b>Batch report</b> generated for June 2026'},
+    {c:'#f59e0b',t:'<b>Ananya Singh</b> improved D → C this term'},
+  ];
+  const times=['2m ago','15m ago','1h ago','2h ago','5h ago'];
+  document.getElementById('actfeed').innerHTML=acts.map((a,i)=>`
+    <div class="aitem">
+      <div class="adot" style="background:${a.c}"></div>
+      <div><div style="color:var(--t2);font-size:12px">${a.t}</div><div style="color:var(--mu);font-size:11px;margin-top:2px">${times[i]}</div></div>
+    </div>`).join('');
+}
+
+function buildQuickStats(){
+  const qs=[
+    {n:'77.7%',l:'Avg attendance',c:'#7c3aed'},{n:'72.8',l:'Avg score',c:'#06b6d4'},
+    {n:'2',l:'High risk',c:'#f43f5e'},{n:'3',l:'Grade A',c:'#10b981'},
+    {n:'87.7%',l:'CV accuracy',c:'#f59e0b'},{n:'1,240',l:'Train samples',c:'#8b5cf6'},
+  ];
+  document.getElementById('qstats').innerHTML=qs.map(q=>`
+    <div class="gcf" style="padding:12px;text-align:center;border-radius:12px">
+      <div style="font-size:18px;font-weight:800;color:${q.c}">${q.n}</div>
+      <div style="font-size:10px;color:var(--t2);margin-top:3px;text-transform:uppercase;letter-spacing:.4px">${q.l}</div>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════
+   STUDENTS
+════════════════════════════════════ */
+let fGrade='All', fDept='All';
+
+function buildFilters(){
+  const grades=['All','A','B','C','D'];
+  const depts=['CS','ECE','ME','Civil','MBA'];
+  document.getElementById('frow').innerHTML=[
+    ...grades.map(g=>`<button class="chip${g==='All'?' on':''}" data-fg="${g}" onclick="setFg('${g}',this)">${g==='All'?'All grades':'Grade '+g}</button>`),
+    '<span style="width:1px;background:rgba(255,255,255,.1);flex-shrink:0;margin:0 4px"></span>',
+    ...depts.map(d=>`<button class="chip" data-fd="${d}" onclick="setFd('${d}',this)">${d}</button>`)
+  ].join('');
+}
+
+function setFg(v,el){ fGrade=v; document.querySelectorAll('[data-fg]').forEach(b=>b.classList.remove('on')); el.classList.add('on'); filterS(); }
+function setFd(v,el){ fDept=v; document.querySelectorAll('[data-fd]').forEach(b=>b.classList.remove('on')); el.classList.add('on'); filterS(); }
+
+function filterS(){
+  const q=(document.getElementById('sq').value||'').toLowerCase();
+  const f=S.filter(s=>
+    (s.n.toLowerCase().includes(q)||s.d.toLowerCase().includes(q)) &&
+    (fGrade==='All'||s.g===fGrade) &&
+    (fDept==='All'||s.d===fDept)
+  );
+  document.getElementById('scount').textContent=f.length+' students';
+  renderCards(f);
+}
+
+function renderCards(list){
+  const rc={Low:'tl-l',Moderate:'tl-m',High:'tl-h'};
+  document.getElementById('sgrid').innerHTML=list.length
+    ? list.map(s=>`
+      <div class="gc scard" onclick="openDr(${s.id})">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="scava" style="background:${s.c}22;color:${s.c}">${s.i}</div>
+          <span class="gp g${s.g}">${s.g}</span>
+        </div>
+        <div class="scname">${s.n}</div>
+        <div class="scdept">${s.d} <span class="tl ${rc[s.r]}">${s.r}</span></div>
+        <div class="scstats">
+          <div class="scstat"><div class="scstatn" style="color:#7c3aed">${s.att}%</div><div class="scstatl">Attend</div></div>
+          <div class="scstat"><div class="scstatn" style="color:#06b6d4">${s.mid}</div><div class="scstatl">Midterm</div></div>
+          <div class="scstat"><div class="scstatn" style="color:#10b981">${s.gpa}</div><div class="scstatl">GPA</div></div>
+        </div>
+        <div class="pbar"><div class="pbarfill" style="width:${s.s}%;background:${s.c}"></div></div>
+      </div>`)
+    .join('')
+    : '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--t2)">No students match your filters</div>';
+}
+
+/* ════════════════════════════════════
+   DRAWER
+════════════════════════════════════ */
+function openDr(id){
+  const s=S.find(x=>x.id===id); if(!s) return;
+  const rc={Low:'tl-l',Moderate:'tl-m',High:'tl-h'};
+  const note=s.r==='High'
+    ? '⚠️ Immediate counseling required. Attendance and scores are well below safe thresholds.'
+    : s.r==='Moderate'
+    ? '⚡ Consistent improvement needed. Focus on attendance and midterm preparation.'
+    : '✅ Excellent trajectory! Consider advanced courses and research opportunities.';
+  document.getElementById('drbody').innerHTML=`
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,${s.c},${s.c}77);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto 12px">${s.i}</div>
+      <div style="font-size:20px;font-weight:700">${s.n}</div>
+      <div style="font-size:13px;color:var(--t2);margin-top:5px">${s.d} &bull; <span class="gp g${s.g}">${s.g}</span></div>
+    </div>
+    <div class="drstatg">
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#7c3aed">${s.att}%</div><div style="font-size:11px;color:var(--t2);margin-top:3px">Attendance</div></div>
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#06b6d4">${s.mid}</div><div style="font-size:11px;color:var(--t2);margin-top:3px">Midterm</div></div>
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#10b981">${s.gpa}</div><div style="font-size:11px;color:var(--t2);margin-top:3px">GPA</div></div>
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#f59e0b">${s.asn}</div><div style="font-size:11px;color:var(--t2);margin-top:3px">Assignments</div></div>
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#f43f5e">${s.prj}</div><div style="font-size:11px;color:var(--t2);margin-top:3px">Projects</div></div>
+      <div class="drstat"><div style="font-size:22px;font-weight:800;color:#f0f4ff">${s.s}</div><div style="font-size:11px;color:var(--t2);margin-top:3px">Overall</div></div>
+    </div>
+    <div style="background:${s.c}0e;border:1px solid ${s.c}33;border-radius:14px;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Predicted outcome</div>
+      <div style="font-size:22px;font-weight:800;color:${s.c}">Grade ${s.g} — ${s.g==='A'?'Outstanding':s.g==='B'?'Good':s.g==='C'?'Average':'Below Average'}</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:8px">Risk: <span class="tl ${rc[s.r]}">${s.r}</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.7;padding:4px 0">${note}</p>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btnp" style="flex:1;justify-content:center" onclick="toast('Advisor notified! 📧','#10b981');closeDr()">📧 Notify Advisor</button>
+      <button class="btnp btno" style="flex:1;justify-content:center" onclick="toast('Full report opened','#06b6d4')">📋 Full Report</button>
+    </div>`;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('ov').classList.add('open');
+}
+function closeDr(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('ov').classList.remove('open');
+}
+
+/* ════════════════════════════════════
+   ANALYTICS (lazy — only when tab opened)
+════════════════════════════════════ */
+let analyticsBuilt=false;
+function lazyA(){
+  if(analyticsBuilt||!window.Chart) return;
+  analyticsBuilt=true;
+  setTimeout(()=>{
+    buildFI(); buildCV(); buildHist(); buildScat();
+  },80);
+}
+
+function buildFI(){
+  const el=document.getElementById('fiC'); if(!el) return;
+  new Chart(el.getContext('2d'),{type:'bar',data:{
+    labels:['Weighted Score','Attendance','Prev GPA','Study Eff.','Midterm','Engagement','Assignments','Participation'],
+    datasets:[{data:[.22,.18,.16,.13,.11,.09,.07,.04],backgroundColor:['#7c3aed','#8b5cf6','#06b6d4','#22d3ee','#10b981','#34d399','#f59e0b','#fbbf24'],borderRadius:6,borderSkipped:false}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:GC},ticks:{color:DK,font:{size:10}}},y:{grid:{display:false},ticks:{color:DK,font:{size:10}}}}}});
+}
+
+function buildCV(){
+  const el=document.getElementById('cvC'); if(!el) return;
+  new Chart(el.getContext('2d'),{type:'line',data:{
+    labels:['F1','F2','F3','F4','F5'],
+    datasets:[
+      {label:'Train',data:[91.2,92.1,90.8,91.7,92.4],borderColor:'#7c3aed',tension:.4,pointRadius:5,pointBackgroundColor:'#7c3aed',fill:false},
+      {label:'Val',data:[87.4,88.0,86.9,88.5,87.8],borderColor:'#f43f5e',tension:.4,pointRadius:5,pointBackgroundColor:'#f43f5e',borderDash:[5,3],fill:false}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:DK}}},
+    scales:{x:{grid:{color:GC},ticks:{color:DK}},y:{min:84,max:95,grid:{color:GC},ticks:{color:DK,callback:v=>v+'%'}}}}});
+}
+
+function buildHist(){
+  const el=document.getElementById('histC'); if(!el) return;
+  new Chart(el.getContext('2d'),{type:'bar',data:{
+    labels:['40–50','50–60','60–70','70–80','80–90','90–100'],
+    datasets:[{data:[2,2,2,1,1,1],backgroundColor:'rgba(124,58,237,.75)',borderColor:'#7c3aed',borderWidth:1,borderRadius:6}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{color:DK,font:{size:11}}},y:{grid:{color:GC},ticks:{color:DK,stepSize:1}}}}});
+}
+
+function buildScat(){
+  const el=document.getElementById('scatC'); if(!el) return;
+  new Chart(el.getContext('2d'),{type:'scatter',data:{
+    datasets:[{
+      data:S.map(s=>({x:s.att,y:s.s})),
+      backgroundColor:S.map(s=>s.c+'cc'),
+      pointRadius:8,pointHoverRadius:11
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:GC},ticks:{color:DK,callback:v=>v+'%'},title:{display:true,text:'Attendance %',color:DK}},
+      y:{grid:{color:GC},ticks:{color:DK},title:{display:true,text:'Overall Score',color:DK}}
+    }}});
+}
+
+/* ════════════════════════════════════
+   PREDICT
+════════════════════════════════════ */
+function buildPipeline(){
+  const steps=[['🧹','Data cleaning'],['⚡','Feature engineering'],['⚖️','Normalization'],['🌲','Random Forest inference'],['✅','Grade prediction output']];
+  document.getElementById('pipsteps').innerHTML=steps.map(([ic,lb])=>`
+    <div class="pipstep">
+      <div class="pipico">${ic}</div>
+      <span style="color:var(--t2);flex:1">${lb}</span>
+      <span style="color:#10b981;font-size:11px;font-weight:600">✓ Done</span>
+    </div>`).join('');
+}
+
+function liveEF(){
+  const a=+document.getElementById('pa').value||0;
+  const m=+document.getElementById('pm').value||0;
+  const asn=+document.getElementById('pasn').value||0;
+  const sh=Math.max(+document.getElementById('psh').value||1,1);
+  const gpa=+document.getElementById('pgpa').value||0;
+  const prj=+document.getElementById('pprj').value||0;
+  const ws=(m*.3+asn*.25+prj*.25+(asn*.5)*.2).toFixed(1);
+  const ef=[
+    {k:'Weighted Score',v:ws,c:'#7c3aed'},
+    {k:'Attend Rate',v:(a/100).toFixed(2),c:'#06b6d4'},
+    {k:'Study Efficiency',v:((m+asn)/(2*sh)).toFixed(2),c:'#10b981'},
+    {k:'Engagement Index',v:((a*.5)/100).toFixed(2),c:'#f59e0b'},
+    {k:'GPA Level',v:gpa>=8?'Strong':gpa>=6?'Moderate':'Weak',c:'#f43f5e'},
+  ];
+  document.getElementById('efchips').innerHTML=ef.map(e=>`
+    <span style="padding:4px 11px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-size:12px;color:var(--t2)">
+      <span style="color:${e.c};font-weight:600">${e.k}:</span> ${e.v}
+    </span>`).join('');
+}
+
+function runPredict(){
+  const a=+document.getElementById('pa').value||0;
+  const m=+document.getElementById('pm').value||0;
+  const asn=+document.getElementById('pasn').value||0;
+  const sh=Math.max(+document.getElementById('psh').value||1,1);
+  const gpa=+document.getElementById('pgpa').value||0;
+  const prj=+document.getElementById('pprj').value||0;
+  const ws=m*.3+asn*.25+prj*.25;
+  const bonus=(a>85?3:a>70?1:0)+(sh>20?2:sh>12?1:0)+(gpa>8?2:gpa>6?1:0);
+  const total=ws+bonus;
+  const R=total>=85?{g:'A',l:'Outstanding',c:'#10b981',cf:94,r:'Low'}
+          :total>=72?{g:'B',l:'Good',c:'#06b6d4',cf:89,r:'Low'}
+          :total>=58?{g:'C',l:'Average',c:'#f59e0b',cf:82,r:'Moderate'}
+          :total>=44?{g:'D',l:'Below Average',c:'#f43f5e',cf:78,r:'High'}
+          :{g:'F',l:'Fail',c:'#dc2626',cf:85,r:'Critical'};
+  const name=document.getElementById('pn').value||'Student';
+  const dept=document.getElementById('pdept').value;
+  const po=document.getElementById('pout');
+  po.style.background=R.c+'0e';
+  po.style.borderColor=R.c+'33';
+  po.innerHTML=`
+    <div style="width:100%">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);margin-bottom:10px">${name} &bull; ${dept}</div>
+      <div class="biggrade" style="color:${R.c};text-shadow:0 0 60px ${R.c}44">${R.g}</div>
+      <div style="font-size:16px;font-weight:700;margin-top:12px;color:${R.c}">${R.l}</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+        <span class="gp" style="background:${R.c}22;color:${R.c};border:1px solid ${R.c}44">⚠ Risk: ${R.r}</span>
+        <span class="gp" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.3)">🎯 Conf: ${R.cf}%</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.09);border-radius:3px;margin:16px auto 0;max-width:300px;overflow:hidden">
+        <div id="cfbar" style="height:100%;width:0;background:${R.c};border-radius:3px;transition:width 1.3s ease"></div>
+      </div>
+    </div>`;
+  setTimeout(()=>{ const b=document.getElementById('cfbar'); if(b) b.style.width=R.cf+'%'; },60);
+  toast(`Grade ${R.g} — ${R.l} (${R.cf}% confidence)`,R.c);
+  liveEF();
+}
+
+/* ════════════════════════════════════
+   INIT — wait for Chart.js to be ready
+════════════════════════════════════ */
+function init(){
+  initDash();
+  buildFilters();
+  renderCards(S);
+  buildPipeline();
+  liveEF();
+  setTimeout(()=>toast('Welcome back, Prof. Rao! 👋','#7c3aed'),800);
+  setTimeout(()=>toast('2 students need attention today ⚠️','#f43f5e'),2400);
+  setTimeout(()=>toast('Model accuracy: 88.5% 🎯','#10b981'),4000);
+}
+
+/* Wait until Chart.js is loaded, then init */
+function waitForChart(tries){
+  if(window.Chart){ init(); }
+  else if(tries>0){ setTimeout(()=>waitForChart(tries-1), 150); }
+  else {
+    /* Chart.js failed to load from CDN — load fallback */
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+    s.onload=init;
+    document.body.appendChild(s);
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>waitForChart(20));
+</script>
+</body>
+</html>
