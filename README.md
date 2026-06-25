@@ -19,7 +19,7 @@
 
 ## 🔗 Live Demo
 
-**👉 [https.github.io/eduml-dashboard](https://dawoodl_progrmmers.github.io/eduml-dashboard)**
+**👉 [https.github.io/eduml-dashboard](https://rdxdawoodi-debuger.github.io/eduml-dashboard)**
 
 
 
